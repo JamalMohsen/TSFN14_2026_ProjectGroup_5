@@ -1,1 +1,215 @@
+Task 1 – Architecture, Scalability and Fault Tolerance Analysis
+Project Information
 
+Project: MMJAuto
+
+Course: Skalbara och feltoleranta system
+
+Contributors: Jamal Mohsen, Mohamad Nour Morad
+
+1. Current Application Architecture
+1.1 Overview
+
+MMJAuto is a web-based application that allows users to browse car models and car parts, manage a wishlist, and receive notifications.
+The system also supports administrator functionality for managing car models and car parts.
+
+The application is built using a client–server architecture with a clear separation between frontend, backend, and database.
+
+The system is structured to support basic e-commerce-style functionality and user management, including:
+
+Authentication
+
+Role-based access
+
+Notifications
+
+1.2 Main Components
+
+The application consists of the following main components:
+
+Frontend (React)
+
+The frontend is built using React and Material UI (MUI).
+It provides the user interface for both customers and administrators.
+
+The frontend is responsible for:
+
+Displaying car models and car parts
+
+Handling user login and registration
+
+Providing search functionality for car models and car parts
+
+Managing user interactions such as wishlists
+
+Communication with the backend is done using HTTP/REST requests via Axios.
+
+Backend (Node.js & Express)
+
+The backend is implemented using Node.js and Express.
+It exposes a REST API that handles application logic and data processing.
+
+The backend is responsible for:
+
+Authentication and authorization (JWT-based)
+
+Business logic and validation
+
+Handling CRUD operations for car models and car parts
+
+Managing notifications and wishlist functionality
+
+Database (MongoDB Atlas)
+
+The application uses MongoDB Atlas as its database solution.
+Data access is handled through Mongoose, which provides schemas and models for structured data handling.
+
+Stored data includes:
+
+Users and roles
+
+Car models
+
+Car parts
+
+Wishlist items
+
+External Services
+
+The system integrates an email service used for notifications, such as:
+
+New car parts added
+
+Restocked car parts
+
+1.3 Component Communication
+
+Users interact with the system through a web browser
+
+The React frontend communicates with the backend using REST API calls
+
+The Express backend processes requests and interacts with MongoDB Atlas
+
+The backend triggers the email service when notification events occur
+
+1.4 Architectural Style
+
+The application follows:
+
+Client–Server Architecture
+
+REST-based API design
+
+Layered architecture, consisting of:
+
+Presentation layer (React)
+
+Application layer (Express)
+
+Data layer (MongoDB)
+
+1.5 Key Technologies and Libraries
+
+React
+
+Material UI (MUI)
+
+Node.js
+
+Express
+
+MongoDB Atlas
+
+Mongoose
+
+Axios
+
+JSON Web Tokens (JWT)
+
+2. Scalability and Fault-Tolerance Issues
+
+This section highlights potential scalability and fault-tolerance issues relevant to the application.
+
+2.1 Resource Usage
+
+As the number of users increases:
+
+CPU and memory usage on the backend may grow
+
+Database queries may become more expensive
+
+Search functionality for car models and car parts could increase load on the database
+
+2.2 Shared State
+
+The application relies on:
+
+A single MongoDB database shared by all users
+
+This shared resource could become a bottleneck under high traffic.
+
+2.3 Concurrency Handling
+
+The backend processes multiple requests concurrently
+
+Potential risks include:
+
+Race conditions when updating stock values
+
+Multiple administrators modifying the same data simultaneously
+
+2.4 Blocking Operations
+
+Long-running database queries could slow down request handling
+
+Email notifications are triggered synchronously, which may delay responses
+
+2.5 External Dependencies
+
+The application depends on external services such as:
+
+MongoDB Atlas
+
+Email service
+
+Failures in these services can affect system availability.
+
+3. Fault Tolerance Considerations
+3.1 Single Points of Failure
+
+The system has several single points of failure:
+
+One backend service
+
+One database
+
+Centralized configuration and secrets
+
+3.2 Error Handling
+
+Errors are handled using middleware in the backend
+
+Some errors may still result in unclear responses to users
+
+3.3 Dependency Failures
+
+Database downtime prevents data access
+
+Email service failures stop notification delivery
+
+3.4 Restart and Recovery
+
+The backend can be restarted manually (e.g. using nodemon)
+
+Application state is persisted in the database
+
+3.5 Observability
+
+Errors are logged to the backend console
+
+No advanced monitoring or logging solution is implemented
+
+Conclusion
+
+The MMJAuto application has a clear and structured architecture suitable for a small to medium-sized system.
+However, several scalability and fault-tolerance challenges exist, particularly regarding shared resources, external dependencies, and single points of failure.
