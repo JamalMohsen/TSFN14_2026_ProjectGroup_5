@@ -1,22 +1,18 @@
 import CarPart from "../models/CarPart.js";
 import { sendEmail } from "../utils/emailService.js";
-import User from "../models/User.js"; // to get all customers
+import User from "../models/User.js";
 import Wishlist from "../models/Wishlist.js";
 
 // @desc    Get all car parts (with optional filters + search)
 // @route   GET /api/carparts
 // @access  Public
-export const getCarParts = async (req, res) => {
+export const getCarParts = async (req, res, next) => {
   try {
     const filters = {};
 
-    // Filter by model ID
     if (req.query.modelId) filters.carModel = req.query.modelId;
-
-    // Filter by stock availability
     if (req.query.inStock) filters.stock = { $gt: 0 };
 
-    // 🔍 Search by name, category, or description
     if (req.query.search) {
       filters.$or = [
         { name: { $regex: req.query.search, $options: "i" } },
@@ -26,37 +22,39 @@ export const getCarParts = async (req, res) => {
     }
 
     const parts = await CarPart.find(filters).populate("carModel");
+
+    console.log(`[INFO] getCarParts -> returned ${parts.length} items`);
     res.json(parts);
   } catch (error) {
-    console.error("Error fetching car parts:", error);
-    res.status(500).json({ message: "Server error" });
+    next(error);
   }
 };
 
 // @desc    Get car part by ID
 // @route   GET /api/carparts/:id
 // @access  Public
-export const getCarPartById = async (req, res) => {
+export const getCarPartById = async (req, res, next) => {
   try {
     const part = await CarPart.findById(req.params.id).populate("carModel");
-    if (part) {
-      res.json(part);
-    } else {
-      res.status(404).json({ message: "Car part not found" });
+
+    if (!part) {
+      res.status(404);
+      throw new Error("Car part not found");
     }
+
+    res.json(part);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    next(error);
   }
 };
 
 // @desc    Create a new car part
 // @route   POST /api/carparts
 // @access  Public (or Admin if you add auth)
-export const createCarPart = async (req, res) => {
+export const createCarPart = async (req, res, next) => {
   try {
     const { name, description, price, stock, carModel, category, image } = req.body;
 
-    // Create new part first
     const part = new CarPart({
       name,
       description,
@@ -69,73 +67,88 @@ export const createCarPart = async (req, res) => {
 
     const createdPart = await part.save();
 
-    // Notify all customers via email
-    const customers = await User.find({ role: "customer" });
-    const emails = customers.map((u) => u.email);
+    console.log(`[INFO] createCarPart -> created ${createdPart._id}`);
 
-    await sendEmail(
-      emails,
-      "🆕 New Car Part Added!",
-      `A new car part "${createdPart.name}" has just been added to MMJAuto. Check it out!`
-    );
+    // Notify all customers via email (external dependency)
+    try {
+      const customers = await User.find({ role: "customer" });
+      const emails = customers.map((u) => u.email);
+
+      if (emails.length > 0) {
+        await sendEmail(
+          emails,
+          "🆕 New Car Part Added!",
+          `A new car part "${createdPart.name}" has just been added to MMJAuto. Check it out!`
+        );
+        console.log(`[INFO] createCarPart -> email sent to ${emails.length} customers`);
+      }
+    } catch (emailErr) {
+      // We log but do not crash the request (fault-tolerance improvement)
+      console.error(`[WARN] createCarPart email failed: ${emailErr.message}`);
+    }
 
     res.status(201).json(createdPart);
   } catch (error) {
-    console.error("Error creating car part:", error);
-    res.status(500).json({ message: "Server error" });
+    next(error);
   }
 };
 
 // @desc    Update an existing car part
 // @route   PUT /api/carparts/:id
 // @access  Public (or Admin if you add auth)
-export const updateCarPart = async (req, res) => {
+export const updateCarPart = async (req, res, next) => {
   try {
     const oldPart = await CarPart.findById(req.params.id);
-    if (!oldPart) return res.status(404).json({ message: "Car part not found" });
+    if (!oldPart) {
+      res.status(404);
+      throw new Error("Car part not found");
+    }
 
     const updatedPart = await CarPart.findByIdAndUpdate(req.params.id, req.body, { new: true });
 
-    // If restocked (was 0 or less, now > 0), notify only users with this part in their wishlist
-if (oldPart.stock <= 0 && updatedPart.stock > 0) {
-  // Find wishlists containing this part
-  const wishlists = await Wishlist.find({ carParts: updatedPart._id }).populate("user");
+    console.log(`[INFO] updateCarPart -> updated ${req.params.id}`);
 
-  // Extract emails
-  const emails = wishlists.map(w => w.user.email);
+    // Restock notification: if stock was 0 (or less) and now > 0
+    if (oldPart.stock <= 0 && updatedPart.stock > 0) {
+      try {
+        const wishlists = await Wishlist.find({ carParts: updatedPart._id }).populate("user");
+        const emails = wishlists.map((w) => w.user?.email).filter(Boolean);
 
-  if (emails.length > 0) {
-    await sendEmail(
-      emails,
-      "✅ Car Part Back in Stock!",
-      `Good news! "${updatedPart.name}" is now back in stock at MMJAuto. Check your wishlist!`
-    );
-  }
-}
-
-
+        if (emails.length > 0) {
+          await sendEmail(
+            emails,
+            "✅ Car Part Back in Stock!",
+            `Good news! "${updatedPart.name}" is now back in stock at MMJAuto. Check your wishlist!`
+          );
+          console.log(`[INFO] updateCarPart -> restock email sent to ${emails.length} users`);
+        }
+      } catch (emailErr) {
+        console.error(`[WARN] updateCarPart restock email failed: ${emailErr.message}`);
+      }
+    }
 
     res.json(updatedPart);
   } catch (error) {
-    console.error("Error updating car part:", error);
-    res.status(500).json({ message: "Server error" });
+    next(error);
   }
 };
 
 // @desc    Delete a car part
 // @route   DELETE /api/carparts/:id
 // @access  Public (or Admin if you add auth)
-export const deleteCarPart = async (req, res) => {
+export const deleteCarPart = async (req, res, next) => {
   try {
     const part = await CarPart.findById(req.params.id);
     if (!part) {
-      return res.status(404).json({ message: "Car part not found" });
+      res.status(404);
+      throw new Error("Car part not found");
     }
 
-    await part.deleteOne(); 
+    await part.deleteOne();
+    console.log(`[INFO] deleteCarPart -> deleted ${req.params.id}`);
+
     res.json({ message: "Car part removed" });
   } catch (error) {
-    console.error("Error deleting car part:", error);
-    res.status(500).json({ message: "Server error" });
+    next(error);
   }
 };
