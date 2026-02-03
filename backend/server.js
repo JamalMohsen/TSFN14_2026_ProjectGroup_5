@@ -9,7 +9,8 @@ import carModelRoutes from "./routes/carModelRoutes.js";
 import carPartRoutes from "./routes/carPartRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
-import { errorHandler } from "./middlewares/errorMiddleware.js";
+import { errorHandler, notFound } from "./middlewares/errorMiddleware.js";
+
 
 connectDB();
 
@@ -31,7 +32,10 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 // Error handler
+// Error handler
+app.use(notFound);
 app.use(errorHandler);
+
 
 // Test endpoints
 app.get("/", (req, res) => res.send("Start page"));
