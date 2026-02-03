@@ -32,7 +32,6 @@ app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 // Error handler
-// Error handler
 app.use(notFound);
 app.use(errorHandler);
 
