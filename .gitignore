@@ -43,3 +43,9 @@ frontend/dist/
 backend/node_modules/
 backend/.env
 backend/uploads/
+
+# terraform
+task_3/terraform/terraform.tfvars
+task_3/terraform/.terraform/
+task_3/terraform/.terraform.lock.hcl
+task_3/terraform/terraform.tfstate*
