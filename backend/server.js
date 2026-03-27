@@ -72,9 +72,9 @@ export default app;
 
 // Only connect DB + start server if NOT running tests
 if (process.env.NODE_ENV !== "test") {
-  connectDB().catch((err) => {
-    console.error("Database connection failed:", err.message);
-  });
+  //connectDB().catch((err) => {
+  //  console.error("Database connection failed:", err.message);
+ // });
 
   const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => {
