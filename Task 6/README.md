@@ -56,6 +56,20 @@ http://127.0.0.1:61310/
 
 ---
 
+## Analysis
+
+The load test results show that the system handled all requests successfully without any errors, indicating that the backend service is stable under the tested load.
+
+The average response time was approximately 40 ms, which indicates good performance and low latency. This suggests that the backend has sufficient resources to handle concurrent users efficiently.
+
+The absence of errors shows that the application logic and database connections are stable under load.
+
+No automatic scaling was observed during the test. This may be because the load was too low to trigger Kubernetes Horizontal Pod Autoscaler (HPA).
+
+Since the test used only 10 users, further testing with higher loads would be useful to identify system limits and potential bottlenecks.
+
+---
+
 ## Screenshots
 
 Include screenshots in the repository:
